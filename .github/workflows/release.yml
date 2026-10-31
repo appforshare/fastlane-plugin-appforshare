@@ -20,7 +20,21 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
-      - uses: rubygems/configure-rubygems-credentials@v1.0.0
+      # Exchange the GitHub OIDC token for a short lived RubyGems key. Done by hand because the first push of a new
+      # gem needs the owning account ID (`owner`), which the released rubygems actions do not send yet.
+      - name: RubyGems credentials
+        env:
+          OWNER_ID: ${{ vars.RUBYGEMS_OWNER_ID }}
+        run: |
+          JWT=$(curl -sf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=rubygems.org" | jq -r .value)
+          BODY=$(jq -n --arg jwt "$JWT" --arg owner "$OWNER_ID" 'if $owner == "" then {jwt: $jwt} else {jwt: $jwt, owner: $owner} end')
+          RES=$(curl -s -X POST https://rubygems.org/api/v1/oidc/trusted_publisher/exchange_token \
+            -H 'Content-Type: application/json' -H 'Accept: application/json' -d "$BODY")
+          KEY=$(echo "$RES" | jq -r '.rubygems_api_key // empty')
+          if [ -z "$KEY" ]; then echo "$RES"; exit 1; fi
+          echo "::add-mask::$KEY"
+          echo "GEM_HOST_API_KEY=$KEY" >> "$GITHUB_ENV"
       - name: Build and push
         run: |
           gem build fastlane-plugin-appforshare.gemspec
