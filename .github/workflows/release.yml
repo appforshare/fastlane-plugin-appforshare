@@ -1,0 +1,27 @@
+name: Release
+
+# Publishes the gem to RubyGems through Trusted Publishing (OIDC), so no API key or OTP is stored.
+# Runs on a version tag (vX.Y.Z) or by hand from the Actions tab.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: rubygems
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - uses: rubygems/configure-rubygems-credentials@v1.0.0
+      - name: Build and push
+        run: |
+          gem build fastlane-plugin-appforshare.gemspec
+          gem push fastlane-plugin-appforshare-*.gem
