@@ -7,6 +7,7 @@ module Fastlane
       APPFORSHARE_URL = :APPFORSHARE_URL
       APPFORSHARE_SLUG = :APPFORSHARE_SLUG
       APPFORSHARE_READINESS = :APPFORSHARE_READINESS
+      APPFORSHARE_CHANNEL_URL = :APPFORSHARE_CHANNEL_URL
     end
 
     class AppforshareAction < Action
@@ -14,7 +15,7 @@ module Fastlane
         file = params[:file]
         UI.user_error!('No build to upload. Pass file: or run gym / gradle first.') unless file && File.exist?(file)
         client = Helper::AppforshareClient.new(token: params[:api_token], api: params[:api_url], log: ->(m) { UI.message(m) })
-        status = client.upload(file, notes: params[:release_notes])
+        status = client.upload(file, notes: params[:release_notes], channel: params[:channel])
         readiness = 'unknown'
         findings = []
         begin
@@ -29,7 +30,10 @@ module Fastlane
         Actions.lane_context[SharedValues::APPFORSHARE_URL] = status['url']
         Actions.lane_context[SharedValues::APPFORSHARE_SLUG] = status['slug']
         Actions.lane_context[SharedValues::APPFORSHARE_READINESS] = readiness
+        Actions.lane_context[SharedValues::APPFORSHARE_CHANNEL_URL] = status.dig('channel', 'url')
         UI.success("Install link: #{status['url']}")
+        UI.success("Channel #{status['channel']['name']}: #{status['channel']['url']}") if status['channel']
+        UI.important("Not put into channel #{params[:channel]}. Check the build page.") if params[:channel] && !status['channel']
         UI.message("Store readiness: #{readiness}")
         findings.each { |f| UI.important("[#{f['level']}] #{f['title']}: #{f['fix']}") }
         fail_on = params[:fail_on]
@@ -62,7 +66,8 @@ module Fastlane
         [
           ['APPFORSHARE_URL', 'Install link'],
           ['APPFORSHARE_SLUG', 'Share code of the build'],
-          ['APPFORSHARE_READINESS', 'Store readiness status: ready, review, blocked or unknown']
+          ['APPFORSHARE_READINESS', 'Store readiness status: ready, review, blocked or unknown'],
+          ['APPFORSHARE_CHANNEL_URL', 'Stable link of the channel (with channel:), always the newest build in it']
         ]
       end
 
@@ -73,6 +78,7 @@ module Fastlane
                                        default_value: Actions.lane_context[SharedValues::IPA_OUTPUT_PATH] || Actions.lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH],
                                        default_value_dynamic: true),
           FastlaneCore::ConfigItem.new(key: :release_notes, env_name: 'APPFORSHARE_RELEASE_NOTES', description: 'Release notes shown to testers (Pro and Team)', optional: true),
+          FastlaneCore::ConfigItem.new(key: :channel, env_name: 'APPFORSHARE_CHANNEL', description: 'Put the build into this channel (Beta, Live), created on first use (Pro and Team)', optional: true),
           FastlaneCore::ConfigItem.new(key: :fail_on, env_name: 'APPFORSHARE_FAIL_ON', description: 'Fail the lane when store readiness is "blocked", or "review"', optional: true,
                                        verify_block: proc { |v| UI.user_error!('fail_on takes "blocked" or "review"') unless %w[blocked review].include?(v) }),
           FastlaneCore::ConfigItem.new(key: :api_url, env_name: 'APPFORSHARE_API', description: 'API origin', optional: true, default_value: 'https://appforshare.io')
@@ -82,6 +88,7 @@ module Fastlane
       def self.example_code
         [
           'appforshare(release_notes: "Fixes the login crash")',
+          'appforshare(channel: "beta")',
           'appforshare(file: "app/build/outputs/apk/release/app-release.apk", fail_on: "blocked")'
         ]
       end

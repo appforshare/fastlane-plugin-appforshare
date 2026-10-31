@@ -14,10 +14,11 @@ module Fastlane
         @log = log || ->(_msg) {}
       end
 
-      def upload(path, notes: nil)
+      def upload(path, notes: nil, channel: nil)
         size = File.size(path)
         body = { fileName: File.basename(path), size: size }
         body[:releaseNotes] = notes[0, 5000] if notes && !notes.empty?
+        body[:channel] = channel if channel && !channel.empty?
         created = request(:post, '/uploads', json: body)
         @log.call("Uploading #{File.basename(path)} (#{format('%.1f', size / 1024.0 / 1024)} MB)")
         offset = created['offset'] || 0
@@ -35,7 +36,16 @@ module Fastlane
         loop do
           s = request(:get, "/uploads/#{created['id']}", headers: headers)
           raise Error, (s['error'] || 'The build could not be processed.') if s['status'] == 'FAILED'
-          return s if s['status'] == 'READY'
+          if s['status'] == 'READY'
+            # The channel is filled in right after the build is ready.
+            5.times do
+              break if body[:channel].nil? || s['channel']
+
+              sleep 1
+              s = request(:get, "/uploads/#{created['id']}", headers: headers)
+            end
+            return s
+          end
           raise Error, 'Processing is taking too long. Check your dashboard.' if Time.now > deadline
 
           sleep 2

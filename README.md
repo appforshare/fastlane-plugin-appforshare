@@ -23,9 +23,11 @@ the build from gym (`IPA_OUTPUT_PATH`) or gradle (`GRADLE_APK_OUTPUT_PATH`).
 | `api_token` | `APPFORSHARE_TOKEN` | API token |
 | `file` | `APPFORSHARE_FILE` | .ipa or .apk |
 | `release_notes` | `APPFORSHARE_RELEASE_NOTES` | Shown to testers (Pro and Team) |
+| `channel` | `APPFORSHARE_CHANNEL` | Put the build into a channel (`beta`, `live`), created on first use. Its link always opens the newest build in it (Pro and Team) |
 | `fail_on` | `APPFORSHARE_FAIL_ON` | `blocked` or `review`: fail the lane on the store readiness check. The build stays uploaded. |
 
-Lane context after the action: `APPFORSHARE_URL`, `APPFORSHARE_SLUG`, `APPFORSHARE_READINESS`. The store readiness
+Lane context after the action: `APPFORSHARE_URL`, `APPFORSHARE_SLUG`, `APPFORSHARE_READINESS`, and with `channel:`
+`APPFORSHARE_CHANNEL_URL`. The store readiness
 check is guidance about current App Store and Google Play rules, not a promise of approval.
 
 MIT license. Source: https://github.com/appforshare/fastlane-plugin-appforshare
