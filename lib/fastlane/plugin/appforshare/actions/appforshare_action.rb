@@ -17,7 +17,8 @@ module Fastlane
         UI.user_error!('No build to upload. Pass file: or run gym / gradle first.') unless file && File.exist?(file)
         client = Helper::AppforshareClient.new(token: params[:api_token], api: params[:api_url], log: ->(m) { UI.message(m) })
         status = client.upload(file, notes: params[:release_notes], channel: params[:channel],
-                                       groups: Helper::AppforshareShared.list(params[:groups]), testers: Helper::AppforshareShared.list(params[:testers]))
+                                       groups: Helper::AppforshareShared.list(params[:groups]), testers: Helper::AppforshareShared.list(params[:testers]),
+                                       emails: Helper::AppforshareShared.list(params[:email]), password: params[:password])
         readiness = 'unknown'
         findings = []
         begin
@@ -83,6 +84,8 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :channel, env_name: 'APPFORSHARE_CHANNEL', description: 'Put the build into this channel (Beta, Live), created on first use (Pro and Team)', optional: true),
           FastlaneCore::ConfigItem.new(key: :groups, env_name: 'APPFORSHARE_GROUPS', description: 'Share the build with these tester groups when ready (Team)', optional: true, type: Array),
           FastlaneCore::ConfigItem.new(key: :testers, env_name: 'APPFORSHARE_TESTERS', description: 'Share the build with these tester emails when ready (Team)', optional: true, type: Array),
+          FastlaneCore::ConfigItem.new(key: :email, env_name: 'APPFORSHARE_EMAIL', description: 'Email the install link to up to 5 addresses when ready (Pro and Team)', optional: true, type: Array),
+          FastlaneCore::ConfigItem.new(key: :password, env_name: 'APPFORSHARE_PASSWORD', description: 'Protect the install link with a password (4 to 128 characters)', optional: true, sensitive: true),
           FastlaneCore::ConfigItem.new(key: :fail_on, env_name: 'APPFORSHARE_FAIL_ON', description: 'Fail the lane when store readiness is "blocked", or "review"', optional: true,
                                        verify_block: proc { |v| UI.user_error!('fail_on takes "blocked" or "review"') unless %w[blocked review].include?(v) }),
           FastlaneCore::ConfigItem.new(key: :api_url, env_name: 'APPFORSHARE_API', description: 'API origin', optional: true, default_value: 'https://appforshare.io')

@@ -26,6 +26,8 @@ the build from gym (`IPA_OUTPUT_PATH`) or gradle (`GRADLE_APK_OUTPUT_PATH`).
 | `channel` | `APPFORSHARE_CHANNEL` | Put the build into a channel (`beta`, `live`), created on first use. Its link always opens the newest build in it (Pro and Team) |
 | `groups` | `APPFORSHARE_GROUPS` | Share the build with these tester groups when it is ready (Team) |
 | `testers` | `APPFORSHARE_TESTERS` | Share the build with these tester emails when it is ready (Team) |
+| `email` | `APPFORSHARE_EMAIL` | Email the install link to up to 5 addresses when it is ready (Pro and Team) |
+| `password` | `APPFORSHARE_PASSWORD` | Protect the install link with a password (4 to 128 characters) |
 | `fail_on` | `APPFORSHARE_FAIL_ON` | `blocked` or `review`: fail the lane on the store readiness check. The build stays uploaded. |
 
 Lane context after the action: `APPFORSHARE_URL`, `APPFORSHARE_SLUG`, `APPFORSHARE_READINESS`, and with `channel:`

@@ -14,13 +14,15 @@ module Fastlane
         @log = log || ->(_msg) {}
       end
 
-      def upload(path, notes: nil, channel: nil, groups: [], testers: [])
+      def upload(path, notes: nil, channel: nil, groups: [], testers: [], emails: [], password: nil)
         size = File.size(path)
         body = { fileName: File.basename(path), size: size }
         body[:releaseNotes] = notes[0, 5000] if notes && !notes.empty?
         body[:channel] = channel if channel && !channel.empty?
         body[:groups] = groups unless groups.empty?
         body[:testers] = testers unless testers.empty?
+        body[:emails] = emails unless emails.empty?
+        body[:password] = password if password && !password.empty?
         created = request(:post, '/uploads', json: body)
         @log.call("Uploading #{File.basename(path)} (#{format('%.1f', size / 1024.0 / 1024)} MB)")
         offset = created['offset'] || 0
